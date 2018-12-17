@@ -4,7 +4,13 @@
 
 
 \section{Implementation of JSON}
-\label{sec:implementation of json}
+\label{sec:implementation of json} 
+
+Each configuration of the implementation is a tuple $(X,O,Par,Key,f,S)$. Here $X$, $O$, $Par$, $Key$ and $f$ is the same as that of $\mathit{Spec}(\mathit{JSON})$. $S$ is a function that maps each object id into a concrete state. 
+
+
+
+
 
 \forget{
 Given a JSON object $o$, the semantics of $o$ is given as a labeled transition system (LTS) $\llbracket o \rrbracket = (\globalstates,\acts,\aglobalstate_0,\rightarrow)$, where $\globalstates$ is a set of global configurations, $\acts$ is the set of transition labels, $\aglobalstate_0$ is the initial configuration, and $\rightarrow \subseteq \globalstates \times \acts\times \globalstates$ is the transition relation. We use the action $\src{\arep}{\alabel}$ to label the generator of $\alabel$ when executed at replica $\arep$, and $\dwn{\arep}{\alabel}$ to label the effector of $\alabel$ when executed at $\arep$. For readability, we use $\aglobalstate \xrightarrow{\aact} \aglobalstate'$ to denote a transition $(\aglobalstate,\aact,\aglobalstate')\in\,\rightarrow$.
