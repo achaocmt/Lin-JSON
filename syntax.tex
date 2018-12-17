@@ -1,0 +1,166 @@
+%!TEX root = draft.tex
+
+\section{Syntax of JSON}
+\label{sec:syntax of json}
+
+
+\subsection{Syntax}
+\label{subsec:syntax}
+
+We define a simple command language that is executed locally at each replica, and could query and modify the local copies. The syntax of our command language contains three kinds of commands: %given $x,y \in \vars$, $\aval \in \vals$ and $i \in \mathbb{N}$,
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $x = u$: This command is used to assign a ``tree location'' to variable $x$. Here $x \in \vars$, and there are four possibilities of $u$:
+
+    \begin{itemize}
+    \setlength{\itemsep}{0.5pt}
+    \item[-] $u = \mathit{doc}$,
+
+    \item[-] $u = y.\mathit{key}$: Here $y \in \vars$ and $\mathit{key} \in \strings$,
+
+    \item[-] $u = (\mathit{doc},\mathit{Reg}).\mathit{key}$, here $\mathit{key} \in \strings$,
+
+    \item[-] $u = (o,t)$, Here $o \in \objids$ and $t \in \{ \mathit{Reg}, \mathit{Map},\mathit{List} \}$.
+    \end{itemize}
+
+\item[-] $u.m(a)\Rightarrow b$: This command represents that ``the object of $u$'' calls a method with some arguments. Here $m \in \methods$, $a,b,\ldots \in \datadomain$, and there are five possibilities for $u$:
+
+    \begin{itemize}
+    \setlength{\itemsep}{0.5pt}
+    \item[-] $u = x$ with $x \in \vars$,
+
+    \item[-] $u = \mathit{doc}$,
+
+    \item[-] $u = \mathit{Parent}(x)$ with $x \in \vars$,
+
+    \item[-] $u = (o,t)$ with $o \in \objids$ and $t \in \{ \mathit{Reg}, \mathit{Map},\mathit{List} \}$,
+
+    \item[-] $u = \mathit{sib}(x)$ with $x \in \vars$.
+    \end{itemize}
+
+\item[-] ${\tt checkType}(x)\Rightarrow t$, where $x \in \vars$ and $t \in \{ \mathit{Reg}, \mathit{Map},\mathit{List} \}$. This command is used to return the type of $x$.
+
+${\tt checkType}(\mathit{Parent}(x))\Rightarrow t$, which returns the type of ``parent of $x$''.
+
+\item[-] ${\tt checkSibType}(x) \Rightarrow S_1$ (resp., ${\tt checkSibType}(\textit{doc}) \Rightarrow S_1$), where $x \in \vars$ and $S_1 \subseteq \{ \mathit{Reg}, \mathit{Map},\mathit{List} \}$. This command is used to return the type of $x$, as well as the type of ``other object in the same location of x'' (resp., the type of all object ``at the location of $\textit{doc}$'').
+\end{itemize}
+
+
+
+\subsection{Translation}
+\label{subsec:translation}
+
+With our commands, we could translate the original command of JSON as follows.
+
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $x = \mathit{doc}$: $x = \mathit{doc}$,
+
+\item[-] $x = y.{\tt get}(\mathit{key}_1)$: $x = y.\mathit{key}_1$,
+
+\item[-] $x = y.{\tt idx}(i)$: $(y.{\tt readList}()\Rightarrow a_1 \cdot \ldots \cdot a_k) \cdot (x = a_i)$,
+
+\item[-] $x = \mathit{doc}.{\tt get}(\mathit{key})$: $x = (\mathit{doc},\mathit{Reg}).\mathit{key}$,
+
+\item[-] $x = \mathit{doc}.{\tt idx}(i)$: $(\mathit{doc}.{\tt readList}()\Rightarrow a_1 \cdot \ldots \cdot a_k) \cdot (x = a_i)$,
+
+\item[-] $u = \aval$ with $u \in \vars \cup \{ \mathit{doc} \}$, $\aval \neq \{\}$ and $\aval \neq []$: $({\tt checkSibType}(x) \Rightarrow S_1) \wedge ( \mathit{Reg} \in S_1 )$, then,
+
+    \begin{itemize}
+    \setlength{\itemsep}{0.5pt}
+    \item[-] If $\mathit{Map} \in S_1$, then do $( \mathit{sib}(x).{\tt readMap}()\Rightarrow S ) \cdot ( \mathit{sib}(x).{\tt clearMap}(S) )$,
+
+    \item[-] If $\mathit{List} \in S_1$, then do $( \mathit{sib}(x).{\tt readList}()\Rightarrow l ) \cdot ( \mathit{sib}(x).{\tt clearList}(set \ of \ l) )$,
+
+    \item[-] Do $x.{\tt writeReg}(v,\mathit{id})$ for a new identifier $\mathit{id}$. Moreover, if ${\tt checkType}(\mathit{Parent}(x))\Rightarrow \mathit{Map}$, then we do $\mathit{Parent}(x).{\tt addMap}(\mathit{key}(x),x)$. 
+    \end{itemize}
+
+\item[-] $u = \aval$ with $u \in \vars \cup \{ \mathit{doc} \}$ and $\aval = \{\}$: $({\tt checkSibType}(x) \Rightarrow S_1) \wedge ( \mathit{Reg} \in S_1 )$, then,
+
+    \begin{itemize}
+    \setlength{\itemsep}{0.5pt}
+    \item[-] If $\mathit{Reg} \in S_1$, then do $( \mathit{sib}(x).{\tt readRegIds}()\Rightarrow S ) \cdot ( \mathit{sib}(x).{\tt clearReg}(S) )$,
+
+    \item[-] If $\mathit{List} \in S_1$, then do $( \mathit{sib}(x).{\tt readList}()\Rightarrow l ) \cdot ( \mathit{sib}(x).{\tt clearList}(set \ of \ l) )$,
+
+    \item[-] Do $( x.{\tt readMap}()\Rightarrow S ) \cdot ( x.{\tt clearMap}(S) )$.
+    \end{itemize}
+
+\item[-] $u = \aval$ with $u \in \vars \cup \{ \mathit{doc} \}$ and $\aval = []$: $({\tt checkSibType}(x) \Rightarrow S_1) \wedge ( \mathit{Reg} \in S_1 )$, then,
+
+    \begin{itemize}
+    \setlength{\itemsep}{0.5pt}
+    \item[-] If $\mathit{Reg} \in S_1$, then do $( \mathit{sib}(x).{\tt readRegIds}()\Rightarrow S ) \cdot ( \mathit{sib}(x).{\tt clearReg}(S) )$,
+
+    \item[-] If $\mathit{Map} \in S_1$, then do $( \mathit{sib}(x).{\tt readMap}()\Rightarrow S ) \cdot ( \mathit{sib}(x).{\tt clearMap}(S) )$,
+
+    \item[-] Do $( x.{\tt readList}()\Rightarrow l ) \cdot ( x.{\tt clearList}(set \ of \ l) )$,
+    \end{itemize}
+
+\item[-] $x.{\tt addAfter}(\aval)$ with $\aval \neq \{\}$ and $\aval \neq []$: $( \mathit{Parent}(x).{\tt addAfter}(x, ( \mathit{oid},\mathit{Reg} )) ) \cdot ( ( \mathit{oid},\mathit{Reg} ).$ ${\tt writeReg}( v,\mathit{id} ) )$ for new identifier $\mathit{oid}$ and $\mathit{id}$.
+
+\item[-] $x.{\tt addAfter}(\aval)$ with $\aval = \{\}$: $( \mathit{Parent}(x).{\tt addAfter}(x, ( \mathit{oid},\mathit{Map} )) ) \cdot ( ( \mathit{oid},\mathit{Map} ).{\tt readMap}()\Rightarrow S ) \cdot ( ( \mathit{oid},\mathit{Map} ).{\tt clearMap}(S) )$ for new identifier $\mathit{oid}$.
+
+\item[-] $x.{\tt addAfter}(\aval)$ with $\aval = []$: $( \mathit{Parent}(x).{\tt addAfter}(x, ( \mathit{oid},\mathit{List} )) ) \cdot ( ( \mathit{oid},\mathit{List} ).{\tt readList}\Rightarrow l ) \cdot ( ( \mathit{oid},\mathit{List} ).{\tt clearList}(set \ of \ l) )$ for new identifier $\mathit{oid}$.
+
+\item[-] $x.{\tt delete}()$: First do $\mathit{checkType}(\mathit{Parent}(x))\Rightarrow t$ and we require that $t \in \{ \mathit{Map}, \mathit{List} \}$. Then,
+
+    \begin{itemize}
+    \setlength{\itemsep}{0.5pt}
+    \item[-] If $t = \mathit{Map}$, then do $\mathit{Parent}(x).{\tt removeMap}( \mathit{key}(x) )$,
+
+    \item[-] Else, if $t = \mathit{List}$, then do $\mathit{Parent}(x).{\tt removeList}(x)$.
+    \end{itemize}
+
+\item[-] $x.\mathit{mapValues}$: $x.{\tt readMapValues}()\Rightarrow S$,
+
+\item[-] $x.\mathit{mapKeys}$: $x.{\tt readMapKeys}()\Rightarrow S$,
+
+\item[-] $x.\mathit{listLength}$: $x.{\tt listLength}()\Rightarrow i$,
+
+\item[-] $x.\mathit{regValues}$: $x.{\tt readRegValues}()\Rightarrow S$.
+\end{itemize}
+
+
+\forget{
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] let $\avar = EXPR$, where $\avar \in \vars$,
+
+\item[-] $EXPR = v$, where $v \in VAL$,
+
+\item[-] $EXPR.addAfter(v)$, where $EXPR$ is an element of a list and $v \in VAL$,
+
+\item[-] $EXPR.delete$, where $EXPR$ is an element of a list or an element of a map,
+
+\item[-] $yield$,
+
+\item[-] $EXPR.create(key,type)$, where $EXPR$ is a map,
+
+\item[-] $EXPR.keys$, where $EXPR$ is a map,
+
+\item[-] $EXPR.length$, where $EXPR$ is a list,
+
+\item[-] $EXPR.values$, where $EXPR$ is a register,
+
+\item[-] $EXPR.type$,
+
+\item[-] $CMD; CMD$,
+\end{itemize}
+
+A \emph{cursor} $EXPR$ essentially points to an object of JSON, and such object has type. $EXPR$ is recursively defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $doc$,
+
+\item[-] $\avar$, where $\avar \in \vars$,
+
+\item[-] $EXPR.get(key)$, where $EXPR$ is a map,
+
+\item[-] $EXPR.idx(i)$, where $EXPR$ is a list and $i \in \mathbb{N}$.
+\end{itemize}
+%A variable $x \in VAR$ is used to represent a shortcut of a cursor. Each variable $x$ must be initialized and it can be initialized only once.
+}

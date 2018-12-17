@@ -1,0 +1,274 @@
+%!TEX root = draft.tex
+
+\section{The Sequential Specification of JSON}
+\label{sec:the sequential specification of JSON}
+
+
+\subsection{Sequential Specification $\mathit{Spec}(\mathit{JSON})$}
+\label{subsec:sequential specification Spec(JSON)}
+
+A object id is one of the following cases:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $(\mathit{doc},t)$ with $t \in \{ \mathit{Reg}, \mathit{Map}, \mathit{List} \}$,
+
+\item[-] $(\mathit{doc},\mathit{Map}) \cdot (\mathit{key}_1,\mathit{Map}) \cdot \ldots \cdot (\mathit{key}_i,\mathit{Map}) \cdot (\mathit{key}_{\mathit{i+1}},t)$, where each $\mathit{key}_j$ is a string and $t \in \{ \mathit{Reg}, \mathit{Map}, \mathit{List} \}$,
+
+\item[-] $(\mathit{id},t)$ with $t \in \{ \mathit{Reg}, \mathit{Map}, \mathit{List} \}$, where $\mathit{id}$ is a unique identifier,
+
+\item[-] $(\mathit{id},\mathit{Map}) \cdot (\mathit{key}_1,\mathit{Map}) \cdot \ldots \cdot (\mathit{key}_i,\mathit{Map}) \cdot (\mathit{key}_{\mathit{i+1}},t)$, where $\mathit{id}$ is a unique identifier, each $\mathit{key}_j$ is a string and $t \in \{ \mathit{Reg}, \mathit{Map}, \mathit{List} \}$,
+\end{itemize}
+
+A candidate object id is either a object id, or $l \cdot a$, if $l \cdot (a,t)$ is a object identifier.
+
+Each abstract state $\abstate = (X,O,Par,Key,f,S)$, where
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $X \subseteq \vars$ is a set of variables,
+
+\item[-] $O$ is a set of object id,
+
+\item[-] $Par$ is a function that maps each $x \in \vars$ into $y \in \vars$ or an element of $\{ (\textit{doc},\mathit{Reg}),(\textit{doc},\mathit{Map})$, $(\textit{doc},\mathit{List}) \}$. %$Par(x) = y$, if $y$ is a map or list object, and $x$ is a element of $y$,
+
+\item[-] $Key$ is a function that maps each $x \in \vars$ into an element of $\strings$,
+
+\item[-] $f$ is a function that maps each $x \in \vars$ into a candidate object id,
+
+\item[-] $S$ is a function that maps each object id into its corresponding abstract state.
+\end{itemize}
+
+The transition relation of $\mathit{Spec}(\mathit{JSON})$ is defined as follows:
+
+\noindent {\bf Transitions of the First Kind}:
+
+$(X,O,Par,Key,f,S) \specarrow{ x = u } (X \cup \{x\}, O, Par[x \leftarrow p(u)], Key[x \leftarrow k(u)], f[x \leftarrow q(u)], S)$, if $x \notin X$.
+
+$p(u)$ is defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $p(u) = y$, if $u=y.\mathit{key}$,
+
+\item[-] $p(u) = (\mathit{doc},\mathit{Reg})$, if $u=(\mathit{doc},\mathit{Reg}).\mathit{Key}$,
+
+\item[-] $p(u) = \bot$, otherwise.
+\end{itemize}
+
+$k(u)$ is defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $k(u) = \mathit{key}_1$, if $u = y.\mathit{key}_1$ or $u = (\mathit{doc},\mathit{Reg}).\mathit{key}_1$,
+
+\item[-] $k(u) = \bot$, otherwise.
+\end{itemize}
+
+$q(u)$ is defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $q(u) = f(y).\mathit{key}_1$, if $u = y.\mathit{key}_1$,
+
+\item[-] $q(u) = u$, otherwise.
+\end{itemize}
+
+
+
+\noindent {\bf Transitions of the Second Kind}:
+
+$(X,O,Par,Key,f,S) \specarrow{ u.m(a)\Rightarrow b } (X, O \cup \{ o(u,m) \}, Par, Key, f[l(u) \leftarrow o(u,m)], S')$.
+
+$l(u)$ is defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $l(u) = y$, if $u = y$,
+
+\item[-] $l(u) = \bot$, otherwise.
+\end{itemize}
+
+$t(m)$ is defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $t(m) = \mathit{Reg}$, if $m \in \{ {\tt writeReg}, {\tt readRegValues}, {\tt readRegId}, {\tt clearReg} \}$,
+
+\item[-] $t(m) = \mathit{Map}$, if $m \in \{ {\tt readMap}, {\tt clearMap}, {\tt readMapValues}, {\tt readMapKeys}, {\tt removeMap}, {\tt addMap} \}$,
+
+\item[-] $t(m) = \mathit{List}$, if $m \in \{ {\tt readList}, {\tt clearList}, {\tt addAfter}, {\tt readListLength}, {\tt removeList} \}$.
+\end{itemize}
+
+$o(u,m)$ is defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $o(u,m) = l \cdot (c,t)$, if $u = x$, $f(x) = l \cdot (c,t)$ and $t=t(m)$,
+
+\item[-] $o(u,m) = l \cdot (\mathit{key_1},t(m))$, if $u = x$ and $f(x) = l \cdot \mathit{key}_1$. Here $\mathit{key}_1$ is a string,
+
+\item[-] $o(u,m) = (\mathit{doc},t(m))$, if $u = \mathit{doc}$,
+
+\item[-] $o(u,m) = f(y)$, if $u = \mathit{Parent}(x)$, $\mathit{Par}(x) = y$, $f(y) = l \cdot (c,t)$ and $t = t(m)$,
+
+\item[-] $o(u,m) = (\mathit{id},\mathit{Reg})$, if $u = (\mathit{id},\mathit{Reg})$ and $t(m) = \mathit{Reg}$,
+
+\item[-] $o(u,m) = l \cdot (\mathit{key}_1,t(m))$, if $u = \mathit{sib}(x)$ and $f(x) = l \cdot \mathit{key}_1$,
+
+\item[-] $o(u,m) = l \cdot (c,t(m))$, if $u = \mathit{sib}(x)$ and $f(x) = l \cdot (c,\_)$.
+\end{itemize}
+
+Let $g(a)$ be defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $g(a) = f(x)$, if $a = x$,
+
+\item[-] $g(a) = Key(x)$, if $a = \mathit{key}(x)$,
+
+\item[-] $g(a) = a$, otherwise.
+\end{itemize}
+
+$S'$ is a function that has the same value as $S$ everywhere, except for $o(u,m)$, and it is defined as follows:
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] If $S[o(u,m)] = \abstate_{\bot}$, then $S'[o(u,m)] = \abstate$, where $\abstate_0 \specarrow{ m(g(a))\Rightarrow b } \abstate$. Here $\abstate_0$ is the initial abstract state of type $t(m)$,
+
+\item[-] If $S[o(u,m)] \neq \abstate_{\bot}$, then $S'[o(u,m)] = \abstate$, where $S[o(u,m)] \specarrow{ m(g(a))\Rightarrow b } \abstate$.
+\end{itemize}
+
+
+\noindent {\bf Transitions of the Third Kind}:
+
+$(X,O,Par,Key,f,S) \specarrow{ \mathit{checkType}(x)\Rightarrow t } (X, O, Par, Key, f, S)$, if $x \in X$. Here if $f(x) = l \cdot (\_,t_1)$, then $t = t_1$; Otherwise, $t = \bot$.
+
+$(X,O,Par,Key,f,S) \specarrow{ \mathit{checkType}(\mathit{Parent}x)\Rightarrow t } (X, O, Par, Key, f, S)$, if $x \in X$. Here if $Par(x) = y$ and $f(x) = l \cdot (\_,t_1)$, then $t = t_1$; Otherwise, $t = \bot$.
+
+
+\noindent {\bf Transitions of the Forth Kind}:
+
+$(X,O,Par,Key,f,S) \specarrow{ \mathit{checkSibType}(x)\Rightarrow S_1 } (X, O, Par, Key, f, S)$, if $x \in X$. Here
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] If $f(x) = l \cdot (c,t)$, then for each $t' \in \{ \mathit{Reg}, \mathit{Map}, \mathit{List} \}$, $t' \in S_1$, if $l \cdot (c,t') \in O$,
+
+\item[-] If $f(x) = l \cdot \mathit{key}_1$, then for each $t' \in \{ \mathit{Reg}, \mathit{Map}, \mathit{List} \}$, $t' \in S_1$, if $l \cdot (\mathit{key}_1,t') \in O$.
+\end{itemize}
+
+$(X,O,Par,Key,f,S) \specarrow{ \mathit{checkSibType}(\mathit{doc})\Rightarrow S_1 } (X, O, Par, Key, f, S)$, if $x \in X$. Here for each $t' \in \{ \mathit{Reg}, \mathit{Map}, \mathit{List} \}$, $t' \in S_1$, if $(\mathit{doc},t') \in O$.
+
+
+
+
+
+%In this section we give the sequential specification $\mathit{Spec}(\mathit{JSON})$ of JSON. To describe sequential specifications in a succinct way we will provide an operational description. To that end, we will associate to specifications a notion of abstract state, which we shall generally denote by $\abstate$ and its domain shall be denoted by $\abstates$. Then, to each valid label $\alabel$ we will associate a transition relation $\abstate \specarrow{\alabel}  \abstate'$ which, given an abstract state $\abstate$ and provided that the label $\alabel$ can be applied in $\abstate$, produces a new abstract state $\abstate'$. In the specific case where the label $\alabel$ assumes a certain precondition $\apre$ over the initial abstract state $\abstate$ we will use Hoare-style preconditions and write
+%\(\big(\abstate\ |\ \apre(\abstate)\big) \specarrow{\alabel}
+%  \abstate'\).
+%In this way, a sequential specification is the set of labels that are accepted by the successive application of the transition relation starting from some given initial state $\abstate_{0}$.
+
+
+
+
+
+\subsection{Sequential Specification of Multi-Value Register, Map and List}
+\label{subsec:sequential specification of multi-value register, map and list} 
+
+In this subsection we give sequential specification and abstract state of multi-value register, map and list. 
+
+
+\noindent {\bf Specification of Multi-Value Register}: %We use the sequential specification of multi-value register of our previous work \cite{RA-lin}. 
+Each abstract state $\abstate$ is a set of tuples $(a,id)$, where $a$ is a data and $id$ is an identifier. Moreover, we assume that there is a partial order on identifier. The sequential specification $\specMVReg$ of multi-value register is defined by:
+
+\[
+  \begin{array}{rcl}
+    %\abstate
+    %& \specarrow{\alabellong[\mathtt{readIds}]{}{\abstate}{}}
+    %& \abstate\\
+    \big(\ \abstate\ |\ \neg (\mathit{id} \leq \abstate) \big)
+             & \specarrow{ \alabelshort[{\tt write}]{a,id} }
+    & \abstate \cup \{ (a,\mathtt{id}) \} \setminus \{ (a',id') \in \abstate, id' < id \} \\
+    \abstate
+    & \specarrow{\alabellong[\mathtt{readRegValues}]{}{ S }{}}
+    & \abstate\
+      \begin{array}{c}
+        [\text{with}\ S = \{ a\ \vert\ \exists\ \mathtt{id}, (a,\mathtt{id}) \in \abstate \}]
+      \end{array}\\ 
+    \abstate
+    & \specarrow{\alabellong[\mathtt{readRegIds}]{}{ S }{}}
+    & \abstate\
+      \begin{array}{c}
+        [\text{with}\ S = \{ \mathit{id}\ \vert\ \exists\ a, (a,\mathtt{id}) \in \abstate \}]
+      \end{array}\\ 
+    \abstate
+    & \specarrow{{\tt clearReg}(S)}
+    & \{ (a',\mathit{id}') \vert (a',\mathit{id}') \in \abstate, \mathit{id}' \notin S \}
+  \end{array}
+\] 
+
+Here we use $\neg (\mathit{id} \leq \abstate)$ to represents that $\mathtt{id}$ is not less or equal than any identifier of $\abstate$. Method $\alabelshort[{\tt write}]{a,id}$ puts $\{ (a,id) \}$ into the abstract state and then removes from the abstract state all pairs with a less identifier. Method ${\tt readRegValues}()\Rightarrow S$ returns the value of the abstract state. Method ${\tt readRegIds}()\Rightarrow S$ returns the identifiers of the abstract state. Method ${\tt clearReg}(S)$ takes a set $S$ of identifiers as arguments, and removes from $\abstate$ the pairs with identifiers in $S$.
+
+
+\noindent {\bf Specification of Map}: Each abstract state $\abstate$ is a set of tuples $(\mathit{key},\mathit{value})$, where $\mathit{key}$ is a string and $\mathit{value}$ is a data. Moreover, we assume that each $\mathit{key}$ is unique in $\abstate$. The sequential specification $\specMap$ of map is defined by:
+
+\[
+  \begin{array}{rcl}
+    \abstate
+    & \specarrow{\alabellong[\mathtt{readMap}]{}{ \abstate }{}}
+    & \abstate\\ 
+    \abstate
+    & \specarrow{{\tt clearMap}(S)}
+    & \abstate \setminus S\\ 
+    \abstate
+    & \specarrow{\alabellong[\mathtt{readMapValues}]{}{ S }{}}
+    & \abstate\
+      \begin{array}{c}
+        [\text{with}\ S = \{ \mathit{value}\ \vert\ \exists\ \mathtt{key}, (\mathit{key},\mathtt{value}) \in \abstate \}] 
+      \end{array}\\ 
+    \abstate
+    & \specarrow{\alabellong[\mathtt{readMapKeys}]{}{ S }{}}
+    & \abstate\
+      \begin{array}{c}
+        [\text{with}\ S = \{ \mathit{key}\ \vert\ \exists\ \mathtt{value}, (\mathit{key},\mathtt{value}) \in \abstate \}]
+      \end{array}\\
+    \abstate
+    & \specarrow{{\tt removeMap}(\mathit{key})}
+    & \{ (\mathit{key}',\mathit{value}') \vert (\mathit{key}',\mathit{value}') \in \abstate, \mathit{key}' \neq \mathit{key} \}\\
+    \big(\ \abstate\ |\ \mathit{key} \notin \abstate \big)
+             & \specarrow{ \alabelshort[{\tt addMap}]{\mathit{key},\mathit{value}} }
+    & \abstate \cup \{ (\mathit{key},\mathtt{value}) \}
+  \end{array}
+\]
+
+Here we use $\mathit{key} \notin \abstate$ to represents that for each $(\mathit{key}',\mathit{value}') \in \abstate$, we have $\mathit{key} \neq \mathit{key}'$. Method ${\tt readMap}\Rightarrow S$ returns the pairs of the abstract state. Method $\mathit{clearMap}(S)$ removes pairs of $S$ from the abstract state. Method ${\tt readMapValues}()\Rightarrow S$ returns the set $S$ of values of the abstract state. Method ${\tt readMapKeys}()\Rightarrow S$ returns the set $S$ of keys of the abstract state. Method ${\tt removeMap}(\mathit{key}_1)$ removes the pair of key $\mathit{key}_1$ in the abstract state. Method ${\tt addMap}(\mathit{key},\mathit{value})$ adds the pair $(\mathit{key},\mathit{value})$ into the abstract state. 
+
+
+
+\noindent {\bf Specification of List}: %We use the sequential specification of list of our previous work \cite{RA-lin}. 
+Each abstract state $\abstate = (l,T)$ contains a sequence $l$ of elements of a given type and a set $T$ of elements appearing in the list. The element $l$ is the list of all input values, whether already removed or not; while $T$ stores the removed values and is used as \emph{tombstone set}. The sequential specification $\specRGA$ of list with add-after interface is defined by: 
+  \[\small
+    \begin{array}{rcl}
+      (l,T)
+      & \specarrow{{\tt readList}()\Rightarrow (l/T)}
+      & (l,T)\\
+      (l,T)
+      & \specarrow{{\tt clearList}(S)}
+      & (l,T \cup S)\\ 
+      \big(\ (l_1 \cdot b \cdot l_2,T\big)\ |\ a\text{ fresh}\ \big)
+      & \specarrow{\alabelshort[\mathtt{addAfter}]{b,a}}
+      & (l_1 \cdot b \cdot a \cdot l_2,T)\\
+      (l,T)
+      & \specarrow{{\tt readListLength}\Rightarrow \vert (l/T) \vert}
+      & (l,T)\\ 
+      (l,T)
+      & \specarrow{{\tt removeList}(b)}
+      & (l,T \cup \{ b \}) 
+ \end{array}
+\]
+where we denote by $l/T$ the list resulting from removing all elements of $T$ from $l$. The method ${\tt readList}()\Rightarrow l_1$ returns the list content excluding any element appearing in $T$. Method ${\tt clearList}(S)$ adds elements of $S$ into $T$, hence removing elements of $S$ from the list for subsequent calls to the ${\tt read}$ method. Method ${\tt addAfter}(b,a)$ puts $a$ immediately after $b$ in $l$, assuming that each value is put into list at most once. Method ${\tt readListLength}()\Rightarrow i$ returns the length of list content excluding any element appearing in $T$. Method ${\tt removeList}(b)$ adds $b$ into $T$, hence removing $b$ from the list for subsequent calls to the ${\tt read}$ method. 
+
+
+
+
