@@ -4,9 +4,37 @@
 
 
 \section{Implementation of JSON}
-\label{sec:implementation of json} 
+\label{sec:implementation of json}
 
 Each configuration of the implementation is a tuple $(X,O,Par,Key,f,S)$. Here $X$, $O$, $Par$, $Key$ and $f$ is the same as that of $\mathit{Spec}(\mathit{JSON})$. $S$ is a function that maps each object id into a concrete state. 
+
+We assume that the JSON implementation ensures causal delivery. We assume that the JSON implementation works in a operation-based CRDT approach. 
+
+The message $\mathit{msg}(\mathit{cmd})$ of a command $\mathit{cmd}$ is defined as follows: 
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] $\mathit{msg}(\mathit{cmd}) = ( u.m(a)\Rightarrow b ) \cdot ( \mathit{eff}( m( g(a) )\Rightarrow b ) )$, if $\mathit{cmd} = u.m(a)\Rightarrow b$. Here $\mathit{eff}( m( g(a) )\Rightarrow b )$ is the effector of $S[o(u,m)]$ doing $m(g(a))\Rightarrow b$ operation. 
+
+\item[-] $\mathit{msg}(\mathit{cmd}) = \mathit{cmd}$, otherwise. 
+\end{itemize}
+
+When a replica state $(X,O,Par,Key,f,S)$ receive a message $\mathit{msg}$, it changes the replica state into $(X',O',Par',Key',f',S')$ as follows: 
+
+\begin{itemize}
+\setlength{\itemsep}{0.5pt}
+\item[-] If $\mathit{msg} = ( u.m(a)\Rightarrow b ) \cdot \mathit{eff}$, then, $O' = O \cup \{ o(u,m) \}$, $f' = f[l(u) \leftarrow o(u,m)]$, $S'$ is obtained from $S$ by changing object id $o(u,m)$, such that 
+    
+    \begin{itemize}
+    \setlength{\itemsep}{0.5pt} 
+    \item[-] If $S[o(u,m)] = \abstate_{\bot}$, then $S'[o(u,m)]$ is obtained from $\abstate_0$ by applying the effector $\mathit{eff}$, 
+    
+    \item[-] Otherwise, $S'[o(u,m)]$ is obtained from $S[o(u,m)]$ by applying the effector $\mathit{eff}$. 
+    \end{itemize} 
+
+\item[-] Otherwise, it works as in $\mathit{Spec}(\mathit{JSON})$. 
+\end{itemize}
+
 
 
 
